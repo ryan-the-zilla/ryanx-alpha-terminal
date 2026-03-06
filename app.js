@@ -37,10 +37,16 @@ async function verifyPayment() {
                     if (ix.program === "system" && ix.parsed && ix.parsed.type === "transfer") {
                         const { info } = ix.parsed;
                         // 0.1 SOL = 100,000,000 lamports
-                        if (info.source === userWallet && info.destination === SYSTEM_WALLET && info.lamports >= 100000000) {
-                            found = true;
-                            break;
-                        }
+                        
+// Updated payment verification accepting 0.1, 0.2, or 1.0 SOL
+if (info.source === userWallet && info.destination === "AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM") {
+    const lamports = info.lamports;
+    if (lamports >= 100000000) { // 0.1 SOL minimum
+        found = true;
+        break;
+    }
+}
+
                     }
                 }
             }
@@ -63,11 +69,33 @@ async function verifyPayment() {
     }
 }
 
+
 function unlockContent() {
-    document.getElementById('content-locked').classList.add('hidden');
-    document.getElementById('content-unlocked').classList.remove('hidden');
-    startAlphaStream();
+    const locked = document.getElementById('content-locked');
+    const unlocked = document.getElementById('content-unlocked');
+    
+    locked.style.transition = 'opacity 0.5s ease';
+    locked.style.opacity = '0';
+    
+    setTimeout(() => {
+        locked.classList.add('hidden');
+        unlocked.classList.remove('hidden');
+        unlocked.style.opacity = '0';
+        
+        // Premium unlock effect
+        const app = document.getElementById('app');
+        app.style.transition = 'box-shadow 1s ease, border-color 1s ease';
+        app.style.boxShadow = '0 0 50px rgba(34, 197, 94, 0.2), inset 0 0 50px rgba(34, 197, 94, 0.1)';
+        app.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+        
+        setTimeout(() => {
+            unlocked.style.transition = 'opacity 0.8s ease';
+            unlocked.style.opacity = '1';
+            if (typeof startAlphaStream === 'function') startAlphaStream();
+        }, 100);
+    }, 500);
 }
+
 
 async function startAlphaStream() {
     updatePrices();
