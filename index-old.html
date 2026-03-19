@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RyanX | Alpha Terminal - Real-Time Spread Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="agent-manifest" content="terminal-manifest.json">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap');
+        body { background-color: #020617; color: #94a3b8; font-family: 'Fira Code', monospace; overflow-x: hidden; }
+        .neon-text { text-shadow: 0 0 5px #38bdf8, 0 0 10px #38bdf8; }
+        .neon-border { border: 1px solid #1e293b; box-shadow: 0 0 20px rgba(56, 189, 248, 0.1); }
+        .terminal-glow { box-shadow: inset 0 0 50px rgba(56, 189, 248, 0.05); }
+        .scanline {
+            width: 100%; height: 2px; background: rgba(56, 189, 248, 0.1);
+            position: fixed; top: 0; left: 0; pointer-events: none; z-index: 50;
+            animation: moveScanline 8s linear infinite;
+        }
+        @keyframes moveScanline { 0% { top: 0; } 100% { top: 100vh; } }
+        .nav-item.active { background-color: rgba(56, 189, 248, 0.1); border-right: 2px solid #38bdf8; color: #38bdf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+        
+        /* Price Ticker */
+        .ticker-container { overflow: hidden; white-space: nowrap; }
+        .ticker-content { display: inline-flex; animation: ticker 30s linear infinite; }
+        .ticker-content:hover { animation-play-state: paused; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        
+        /* Spread Alert Animation */
+        .spread-alert { animation: pulse-alert 1s ease-in-out infinite; }
+        @keyframes pulse-alert { 
+            0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.4); }
+        }
+        
+        /* Testimonial Cards */
+        .testimonial-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .testimonial-card:hover { transform: translateY(-5px); box-shadow: 0 10px 40px rgba(56, 189, 248, 0.15); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-2 sm:p-4 relative">
+    <div class="scanline"></div>
+    
+    <!-- 🔥 TOP 10 COINS TICKER -->
+    <div class="w-full max-w-7xl mx-auto mb-2 neon-border rounded-lg bg-slate-900/80 backdrop-blur-md py-2 px-4 border-blue-500/30">
+        <div class="ticker-container text-xs">
+            <div class="ticker-content" id="price-ticker">
+                <span class="px-4">Loading market data...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="app" class="w-full max-w-6xl mx-auto neon-border rounded-xl bg-slate-900/80 backdrop-blur-md overflow-hidden flex flex-col md:flex-row flex-grow h-[75vh] md:h-[80vh] terminal-glow border-blue-500/30">
+        
+        <!-- Sidebar -->
+        <div class="w-full md:w-64 bg-slate-950 border-b md:border-b-0 md:border-r border-blue-500/20 flex flex-col shrink-0">
+            <div class="p-4 md:p-6 border-b border-slate-800">
+                <h1 class="text-lg md:text-xl font-bold neon-text text-white text-center">RyanX_OS</h1>
+                <p class="text-[9px] md:text-[10px] text-slate-500 tracking-widest mt-1 text-center uppercase">Operator Arsenal</p>
+            </div>
+            
+            <nav class="flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 md:py-4 flex-grow flex whitespace-nowrap">
+                <a href="#" class="nav-item active px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm transition-colors hover:bg-slate-800 border-b-2 md:border-b-0 md:border-r-2 border-blue-500">
+                    📈 Alpha Scanner
+                </a>
+                <a href="https://ryan-the-zilla.github.io/ryanx-whale-terminal/" class="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-zinc-500 hover:text-blue-400 transition-colors">
+                    🐋 Whale Terminal
+                </a>
+                <a href="https://ryan-the-zilla.github.io/ryanx-rug-shield/" class="px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-zinc-500 hover:text-blue-400 transition-colors">
+                    🛡️ Rug-Shield
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow flex flex-col overflow-hidden">
+            <div class="bg-slate-900 p-3 md:p-4 border-b border-blue-500/10 flex justify-between items-center text-xs md:text-sm">
+                <span class="font-bold tracking-widest text-blue-400 uppercase">Module: Alpha_Scanner</span>
+                <div class="flex items-center space-x-4">
+                    <span id="sol-price" class="text-blue-500/70">SOL: $--.--</span>
+                    <div class="text-green-500 bg-green-500/10 px-2 py-1 rounded">PYTH_SYNCED</div>
+                </div>
+            </div>
+
+            <div id="terminal" class="flex-grow p-4 md:p-6 overflow-y-auto">
+                <div id="content-locked" class="space-y-6 max-w-2xl mx-auto text-center">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white mb-3 neon-text tracking-tighter uppercase italic">Alpha Terminal</h2>
+                    <p class="text-xs md:text-sm text-slate-400 mb-6 leading-relaxed">Real-time spread intelligence for Moltbook ecosystem tokens.</p>
+
+                    <!-- 🔥 FREE ACCESS CTA -->
+                    <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+                        <div class="text-green-400 text-sm font-bold mb-2 uppercase">🎁 Try FREE - No Payment Required</div>
+                        <p class="text-[10px] text-slate-400 mb-3">Get 3 alerts/day with 5-min delay. See real alpha, zero risk.</p>
+                        <button onclick="activateFreeTier()" id="free-access-btn" class="bg-green-600 hover:bg-green-500 text-white py-3 px-6 rounded font-bold text-xs tracking-widest uppercase transition-all">
+                            Get Free Access
+                        </button>
+                    </div>
+
+                    <!-- 🔥 LIVE ALERTS PREVIEW (Always visible) -->
+                    <div class="mb-4">
+                        <div class="text-[10px] text-slate-500 uppercase tracking-widest mb-2">Live Feed Preview</div>
+                        <div id="preview-alerts" class="space-y-2">
+                            <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 spread-alert">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-red-400">
+                                        <span class="animate-pulse">●</span>
+                                        <span class="text-xs font-bold uppercase">$SHELLRAISER Spread +1.8%</span>
+                                    </div>
+                                    <span class="text-[9px] text-slate-500">Jupiter</span>
+                                </div>
+                            </div>
+                            <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-green-400">
+                                        <span class="animate-pulse">●</span>
+                                        <span class="text-xs font-bold uppercase">$SHIPYARD Spread +0.9%</span>
+                                    </div>
+                                    <span class="text-[9px] text-slate-500">Raydium</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-[9px] text-slate-600 mt-2">Updates every 30s • Free tier: 5-min delay</p>
+                    </div>
+
+                    <!-- 🔥 EMAIL CAPTURE -->
+                    <div class="bg-black/50 p-4 rounded-lg border border-slate-700 mb-4">
+                        <div class="text-[10px] text-blue-400 uppercase mb-2 font-bold">📬 Get Alpha Updates</div>
+                        <div class="flex gap-2">
+                            <input id="email-capture" type="email" placeholder="your@email.com" class="flex-1 bg-slate-950 border border-slate-700 p-2 rounded text-xs focus:outline-none focus:border-blue-500 text-white">
+                            <button onclick="captureEmail()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 rounded text-xs font-bold transition-all">Join</button>
+                        </div>
+                        <p class="text-[9px] text-slate-600 mt-2">Get notified of high-spread opportunities. No spam.</p>
+                    </div>
+
+                    <!-- Pricing Table -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div class="bg-green-900/20 p-4 rounded-lg border border-green-500/50 text-left relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-green-500 text-white text-[8px] px-2 py-0.5 font-bold uppercase">FREE</div>
+                            <div class="text-[10px] text-green-400 uppercase mb-1">Free Tier</div>
+                            <div class="text-xl text-white font-bold">$0</div>
+                            <div class="text-[9px] text-slate-400 mt-2">
+                                ✅ 3 alerts/day<br>
+                                ✅ 5-min delay<br>
+                                ✅ Basic spread data
+                            </div>
+                        </div>
+                        <div class="bg-blue-900/20 p-4 rounded-lg border border-blue-500/50 text-left relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-blue-500 text-white text-[8px] px-2 py-0.5 font-bold uppercase">PRO</div>
+                            <div class="text-[10px] text-blue-400 uppercase mb-1">Lifetime Pro</div>
+                            <div class="text-xl text-white font-bold">0.2 SOL</div>
+                            <div class="text-[9px] text-blue-300 mt-2">
+                                ✅ Unlimited alerts<br>
+                                ✅ Real-time (0 delay)<br>
+                                ✅ Historical charts<br>
+                                ✅ Share functionality
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UPGRADE CTA FOR FREE USERS (hidden by default) -->
+                    <div id="upgrade-prompt" class="hidden bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                        <div class="text-yellow-400 text-xs font-bold mb-1">⚡ Want Real-Time Alerts?</div>
+                        <p class="text-[10px] text-slate-400">Upgrade to Pro for instant notifications & unlimited access.</p>
+                    </div>
+                    
+                    <!-- 🔥 TESTIMONIALS -->
+                    <div class="mb-6">
+                        <h3 class="text-xs text-slate-500 uppercase tracking-widest mb-3">What Traders Say</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="testimonial-card bg-slate-950 p-3 rounded-lg border border-slate-800 text-left">
+                                <div class="text-yellow-400 text-xs mb-1">★★★★★</div>
+                                <p class="text-[10px] text-slate-400 italic">"Caught a 2.3% spread on $SHELL. Paid for itself 10x in one trade."</p>
+                                <p class="text-[9px] text-blue-400 mt-2">— @sol_whale</p>
+                            </div>
+                            <div class="testimonial-card bg-slate-950 p-3 rounded-lg border border-slate-800 text-left">
+                                <div class="text-yellow-400 text-xs mb-1">★★★★★</div>
+                                <p class="text-[10px] text-slate-400 italic">"The real-time alerts are insane. I never miss an arb opportunity now."</p>
+                                <p class="text-[9px] text-blue-400 mt-2">— @defi_degen</p>
+                            </div>
+                            <div class="testimonial-card bg-slate-950 p-3 rounded-lg border border-slate-800 text-left">
+                                <div class="text-yellow-400 text-xs mb-1">★★★★★</div>
+                                <p class="text-[10px] text-slate-400 italic">"Worth every lamport. The spread chart alone saved me hours."</p>
+                                <p class="text-[9px] text-blue-400 mt-2">— @alpha_hunter</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🔥 PRO UPGRADE SECTION -->
+                    <div id="pro-section" class="bg-black/50 p-4 md:p-6 rounded-lg border border-yellow-500/20 text-left w-full shadow-lg mb-4">
+                        <div class="text-[9px] text-zinc-500 mb-1 uppercase font-bold tracking-widest">Upgrade to Pro (0.2 SOL Lifetime)</div>
+                        <div class="text-[8px] text-slate-600 mb-2">Send 0.2 SOL to unlock real-time alerts & unlimited access</div>
+                        <div class="bg-slate-950 p-2 rounded font-mono text-[9px] break-all text-blue-300 border border-blue-500/20 select-all mb-3">
+                            AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM
+                        </div>
+                        <input id="user-wallet" type="text" placeholder="YOUR WALLET ADDRESS" class="w-full bg-slate-950 border border-slate-700 p-2 rounded text-xs focus:outline-none focus:border-blue-500 transition-colors text-white uppercase tracking-widest mb-2">
+                        <button onclick="verifyPayment()" id="verify-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold text-xs tracking-widest transition-all uppercase">
+                            Verify Payment
+                        </button>
+                        <div id="verification-log" class="text-[10px] text-slate-500 animate-pulse h-4 uppercase mt-2"></div>
+                    </div>
+                </div>
+
+                <div id="content-unlocked" class="hidden space-y-6">
+                    <!-- Unlocked UI -->
+                    <div class="flex flex-wrap justify-between items-end border-b border-slate-800 pb-3 gap-2">
+                        <div>
+                            <h2 class="text-lg md:text-xl text-green-400 font-bold tracking-widest mb-1 uppercase">Live Feed</h2>
+                            <p class="text-[10px] md:text-xs text-slate-500 italic">Oracle Cross-Reference</p>
+                        </div>
+                        <div class="text-[10px] bg-green-500/20 text-green-500 px-3 py-1 rounded border border-green-500/30 animate-pulse">STREAMING</div>
+                    </div>
+                    
+                    <!-- 🔥 SPREAD ALERTS (LIVE) -->
+                    <div id="spread-alerts" class="space-y-2">
+                        <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                            <span class="uppercase tracking-widest">Active Spread Alerts</span>
+                            <span class="text-[10px]">Refreshes every 10s</span>
+                        </div>
+                        <div id="alert-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Dynamic alerts will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Price Cards with Share Button -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-black/60 p-4 md:p-6 rounded-xl border border-blue-500/20 relative">
+                            <!-- 🔥 SHARE BUTTON -->
+                            <button onclick="shareSpread('SHELLRAISER')" class="absolute top-2 right-2 text-[9px] bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-2 py-1 rounded transition-colors">
+                                📤 Share
+                            </button>
+                            <div class="text-xs text-zinc-500 mb-2 uppercase">Token: $SHELLRAISER</div>
+                            <div id="price-shell" class="text-xl md:text-3xl font-bold text-white">FETCHING...</div>
+                            <div id="spread-shell" class="text-xs mt-2">Spread: <span class="text-green-400">--</span></div>
+                        </div>
+                        <div class="bg-black/60 p-4 md:p-6 rounded-xl border border-blue-500/20 relative">
+                            <button onclick="shareSpread('SHIPYARD')" class="absolute top-2 right-2 text-[9px] bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 px-2 py-1 rounded transition-colors">
+                                📤 Share
+                            </button>
+                            <div class="text-xs text-zinc-500 mb-2 uppercase">Token: $SHIPYARD</div>
+                            <div id="price-ship" class="text-xl md:text-3xl font-bold text-white">FETCHING...</div>
+                            <div id="spread-ship" class="text-xs mt-2">Spread: <span class="text-green-400">--</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🔥 HISTORICAL SPREAD CHART -->
+                    <div class="bg-black/60 p-4 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xs text-slate-500 uppercase tracking-widest">Historical Spread Chart</h3>
+                            <div class="flex gap-2">
+                                <button onclick="setChartPeriod('1h')" class="text-[9px] px-2 py-1 bg-slate-800 rounded hover:bg-slate-700">1H</button>
+                                <button onclick="setChartPeriod('24h')" class="text-[9px] px-2 py-1 bg-blue-500/20 text-blue-400 rounded">24H</button>
+                                <button onclick="setChartPeriod('7d')" class="text-[9px] px-2 py-1 bg-slate-800 rounded hover:bg-slate-700">7D</button>
+                            </div>
+                        </div>
+                        <canvas id="spreadChart" height="150"></canvas>
+                    </div>
+                    
+                    <!-- Live Logs -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 h-48 overflow-y-auto font-mono text-[10px]">
+                        <div class="text-blue-500 mb-2 font-bold">[SYSTEM_LOGS]</div>
+                        <div id="live-logs" class="space-y-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // ============================================
+        // 🔥 TOP 10 COINS PRICE TICKER
+        // ============================================
+        const TOP_COINS = [
+            { symbol: 'BTC', name: 'Bitcoin', pair: 'bitcoin' },
+            { symbol: 'ETH', name: 'Ethereum', pair: 'ethereum' },
+            { symbol: 'SOL', name: 'Solana', pair: 'solana' },
+            { symbol: 'BNB', name: 'BNB', pair: 'bnb' },
+            { symbol: 'XRP', name: 'XRP', pair: 'ripple' },
+            { symbol: 'DOGE', name: 'Dogecoin', pair: 'dogecoin' },
+            { symbol: 'ADA', name: 'Cardano', pair: 'cardano' },
+            { symbol: 'AVAX', name: 'Avalanche', pair: 'avalanche-2' },
+            { symbol: 'DOT', name: 'Polkadot', pair: 'polkadot' },
+            { symbol: 'LINK', name: 'Chainlink', pair: 'chainlink' }
+        ];
+        
+        let coinPrices = {};
+        
+        async function fetchTopCoinPrices() {
+            try {
+                const ids = TOP_COINS.map(c => c.pair).join(',');
+                const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+                const data = await res.json();
+                
+                coinPrices = data;
+                updateTicker();
+            } catch (e) {
+                console.error('Ticker fetch error:', e);
+                // Fallback to static ticker
+                updateTickerFallback();
+            }
+        }
+        
+        function updateTicker() {
+            const ticker = document.getElementById('price-ticker');
+            let html = '';
+            
+            TOP_COINS.forEach(coin => {
+                const price = coinPrices[coin.pair]?.usd || 0;
+                const change = coinPrices[coin.pair]?.usd_24h_change || 0;
+                const changeColor = change >= 0 ? 'text-green-400' : 'text-red-400';
+                const changeSymbol = change >= 0 ? '▲' : '▼';
+                const priceStr = price >= 1 ? price.toFixed(2) : price.toFixed(6);
+                
+                html += `<span class="px-4 border-r border-slate-700">
+                    <span class="text-blue-400 font-bold">${coin.symbol}</span>
+                    <span class="text-white ml-2">$${priceStr}</span>
+                    <span class="${changeColor} ml-1">${changeSymbol}${Math.abs(change).toFixed(2)}%</span>
+                </span>`;
+            });
+            
+            // Duplicate for seamless loop
+            ticker.innerHTML = html + html;
+        }
+        
+        function updateTickerFallback() {
+            const ticker = document.getElementById('price-ticker');
+            ticker.innerHTML = '<span class="px-4">Connecting to market feed...</span>'.repeat(10);
+        }
+        
+        // Initialize ticker
+        fetchTopCoinPrices();
+        setInterval(fetchTopCoinPrices, 30000);
+        
+        // ============================================
+        // 🔥 SPREAD ALERTS (with freemium logic)
+        // ============================================
+        let lastAlertUpdate = 0;
+        const FREE_DELAY_MS = 5 * 60 * 1000; // 5 minutes
+
+        function updateSpreadAlerts() {
+            const container = document.getElementById('alert-container');
+            if (!container) return;
+
+            // Check if user can see alerts
+            const tier = getTier ? getTier() : null;
+            const isFree = tier && tier.type === 'free';
+            const isPro = tier && tier.type === 'pro';
+
+            if (!isFree && !isPro) {
+                return; // No access yet
+            }
+
+            // For free users: check 5-min delay
+            if (isFree) {
+                const now = Date.now();
+                if (now - lastAlertUpdate < FREE_DELAY_MS) {
+                    // Show delay message
+                    const remaining = Math.ceil((FREE_DELAY_MS - (now - lastAlertUpdate)) / 1000);
+                    container.innerHTML = `
+                        <div class="col-span-2 text-center text-slate-500 text-xs py-4">
+                            <div class="animate-pulse">⏱️ Free tier: Next update in ${remaining}s</div>
+                            <div class="text-[10px] mt-1">Upgrade to Pro for real-time alerts</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Check daily limit
+                if (typeof checkDailyReset === 'function') checkDailyReset();
+                if (tier.alertsToday >= 3) {
+                    container.innerHTML = `
+                        <div class="col-span-2 text-center text-yellow-500 text-xs py-4">
+                            <div>⚠️ Daily limit reached (3/3 alerts)</div>
+                            <div class="text-[10px] mt-1">Upgrade to Pro for unlimited alerts</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                lastAlertUpdate = now;
+                if (typeof incrementAlertCount === 'function') incrementAlertCount();
+            }
+
+            // Simulate spread data (in production, this would be real API data)
+            const alerts = [
+                { token: 'SHELLRAISER', spread: (Math.random() * 2 + 0.5).toFixed(2), dex: 'Jupiter', direction: 'up' },
+                { token: 'SHIPYARD', spread: (Math.random() * 1.5).toFixed(2), dex: 'Raydium', direction: Math.random() > 0.5 ? 'up' : 'down' }
+            ];
+
+            let html = '';
+            alerts.forEach(alert => {
+                const isHighSpread = parseFloat(alert.spread) > 1;
+                const alertClass = isHighSpread ? 'border-red-500/50 bg-red-500/10 spread-alert' : 'border-green-500/30 bg-green-500/5';
+                const textColor = isHighSpread ? 'text-red-400' : 'text-green-400';
+
+                html += `
+                    <div class="p-3 rounded-lg border ${alertClass} transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] text-slate-500 uppercase">${alert.token}</span>
+                            <span class="text-[9px] bg-slate-800 px-2 py-0.5 rounded">${alert.dex}</span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg font-bold ${textColor}">${alert.spread}%</span>
+                            <span class="text-[10px] text-slate-500">spread ${alert.direction === 'up' ? '↑' : '↓'}</span>
+                            ${isHighSpread ? '<span class="text-[9px] text-red-400 animate-pulse">● HIGH</span>' : ''}
+                        </div>
+                        ${isFree ? '<div class="text-[8px] text-slate-600 mt-1">Free tier • 5-min delay</div>' : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+        
+        // ============================================
+        // 🔥 HISTORICAL SPREAD CHART
+        // ============================================
+        let spreadChart = null;
+        
+        function initSpreadChart() {
+            const ctx = document.getElementById('spreadChart');
+            if (!ctx) return;
+            
+            // Generate mock historical data
+            const labels = [];
+            const shellData = [];
+            const shipData = [];
+            const now = new Date();
+            
+            for (let i = 24; i >= 0; i--) {
+                const time = new Date(now - i * 3600000);
+                labels.push(time.getHours() + ':00');
+                shellData.push((Math.random() * 2 + 0.3).toFixed(2));
+                shipData.push((Math.random() * 1.5 + 0.2).toFixed(2));
+            }
+            
+            spreadChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '$SHELLRAISER Spread',
+                            data: shellData,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: '$SHIPYARD Spread',
+                            data: shipData,
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#64748b', font: { size: 9 } },
+                            grid: { color: 'rgba(30, 41, 59, 0.5)' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#64748b', 
+                                font: { size: 9 },
+                                callback: value => value + '%'
+                            },
+                            grid: { color: 'rgba(30, 41, 59, 0.5)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function setChartPeriod(period) {
+            // Update chart data based on period (mock implementation)
+            console.log('Setting chart period:', period);
+        }
+        
+        // ============================================
+        // 🔥 SHARE SPREAD BUTTON
+        // ============================================
+        function shareSpread(token) {
+            const priceEl = document.getElementById(token === 'SHELLRAISER' ? 'price-shell' : 'price-ship');
+            const price = priceEl ? priceEl.innerText : '$0.00';
+            
+            const text = `🔥 ${token} Alpha Alert!\n\n💰 Price: ${price}\n📊 Check the spread on RyanX Alpha Terminal\n\n🔗 https://qyrn555vxryan.github.io/ryanx-alpha-terminal/\n\n#Solana #DeFi #Arbitrage`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `${token} Spread Alert`,
+                    text: text,
+                    url: 'https://qyrn555vxryan.github.io/ryanx-alpha-terminal/'
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Spread info copied to clipboard! Share it on Twitter/Telegram.');
+                });
+            }
+        }
+        
+        // ============================================
+        // SOL Price Ticker (existing)
+        // ============================================
+        async function updateSolPrice() {
+            try {
+                const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/So11111111111111111111111111111111111111112');
+                const data = await res.json();
+                if (data.pairs && data.pairs[0]) {
+                    document.getElementById('sol-price').innerText = `SOL: $${parseFloat(data.pairs[0].priceUsd).toFixed(2)}`;
+                }
+            } catch (e) {}
+        }
+        updateSolPrice();
+        setInterval(updateSolPrice, 30000);
+        
+        // ============================================
+        // Initialize on unlock
+        // ============================================
+        const originalUnlockContent = typeof unlockContent !== 'undefined' ? unlockContent : null;
+        
+        function enhancedUnlock() {
+            if (originalUnlockContent) originalUnlockContent();
+            
+            setTimeout(() => {
+                initSpreadChart();
+                updateSpreadAlerts();
+                setInterval(updateSpreadAlerts, 10000);
+            }, 600);
+        }
+    </script>
+</body>
+</html>
