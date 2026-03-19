@@ -6,16 +6,16 @@ const TOKENS = {
 };
 
 // ============================================
-// 🔥 FREEMIUM SYSTEM
+// 💰 PAY WHAT YOU WANT SYSTEM
 // ============================================
-const FREE_TIER = {
-    maxAlertsPerDay: 3,
-    delayMinutes: 5,
-    storageKey: 'ryanx_alpha_tier'
-};
+const MIN_PAYMENT_SOL = 0.05;
+const SUGGESTED_PAYMENT_SOL = 0.1;
+const STORAGE_KEY = 'ryanx_alpha_tier';
+
+let selectedAmount = SUGGESTED_PAYMENT_SOL; // Default to suggested
 
 function getTier() {
-    const stored = localStorage.getItem(FREE_TIER.storageKey);
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;
     try {
         return JSON.parse(stored);
@@ -25,12 +25,7 @@ function getTier() {
 }
 
 function setTier(tier) {
-    localStorage.setItem(FREE_TIER.storageKey, JSON.stringify(tier));
-}
-
-function isFreeUser() {
-    const tier = getTier();
-    return tier && tier.type === 'free';
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tier));
 }
 
 function isProUser() {
@@ -38,120 +33,66 @@ function isProUser() {
     return tier && tier.type === 'pro';
 }
 
-function activateFreeTier() {
-    const today = new Date().toDateString();
-    const tier = {
-        type: 'free',
-        activatedAt: new Date().toISOString(),
-        alertsToday: 0,
-        lastAlertDate: today
-    };
-    setTier(tier);
+function selectAmount(amount) {
+    selectedAmount = amount;
 
-    // Update UI
-    const btn = document.getElementById('free-access-btn');
-    if (btn) {
-        btn.innerText = '✓ Free Access Activated';
-        btn.disabled = true;
-        btn.classList.remove('bg-green-600', 'hover:bg-green-500');
-        btn.classList.add('bg-slate-700', 'cursor-not-allowed');
+    // Update button styles
+    document.querySelectorAll('.amount-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'border-blue-500');
+        btn.classList.add('bg-slate-800', 'border-slate-700');
+    });
+
+    // Highlight selected
+    event.target.classList.remove('bg-slate-800', 'border-slate-700');
+    event.target.classList.add('bg-blue-600', 'border-blue-500');
+
+    // Clear custom input if preset selected
+    const customInput = document.getElementById('custom-amount');
+    if (customInput) {
+        customInput.value = '';
+        customInput.style.borderColor = '';
+        customInput.style.color = '';
     }
 
-    // Show upgrade prompt
-    const upgradePrompt = document.getElementById('upgrade-prompt');
-    if (upgradePrompt) {
-        upgradePrompt.classList.remove('hidden');
-    }
-
-    // Unlock content with free tier limitations
-    unlockFreeContent();
+    // Update display
+    updatePaymentDisplay();
 }
 
-function checkDailyReset() {
-    const tier = getTier();
-    if (!tier || tier.type !== 'free') return;
+function updatePaymentDisplay() {
+    const displayEl = document.getElementById('selected-amount-display');
+    const verifyBtn = document.getElementById('verify-btn');
 
-    const today = new Date().toDateString();
-    if (tier.lastAlertDate !== today) {
-        // Reset daily counter
-        tier.alertsToday = 0;
-        tier.lastAlertDate = today;
-        setTier(tier);
+    if (displayEl) {
+        displayEl.textContent = `Selected: ${selectedAmount.toFixed(2)} SOL`;
+    }
+
+    if (verifyBtn) {
+        verifyBtn.textContent = `Verify ${selectedAmount.toFixed(2)} SOL Payment`;
     }
 }
 
-function canShowAlert() {
-    if (isProUser()) return true;
+function validateCustomAmount() {
+    const input = document.getElementById('custom-amount');
+    const value = parseFloat(input.value);
 
-    if (isFreeUser()) {
-        checkDailyReset();
-        const tier = getTier();
-        return tier.alertsToday < FREE_TIER.maxAlertsPerDay;
+    if (isNaN(value) || value < MIN_PAYMENT_SOL) {
+        input.style.borderColor = '#ef4444';
+        input.style.color = '#ef4444';
+        selectedAmount = MIN_PAYMENT_SOL;
+    } else {
+        input.style.borderColor = '#22c55e';
+        input.style.color = '#22c55e';
+        selectedAmount = value;
+
+        // Deselect preset buttons
+        document.querySelectorAll('.amount-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'border-blue-500');
+            btn.classList.add('bg-slate-800', 'border-slate-700');
+        });
     }
 
-    return false;
+    updatePaymentDisplay();
 }
-
-function incrementAlertCount() {
-    if (!isFreeUser()) return;
-
-    const tier = getTier();
-    tier.alertsToday++;
-    setTier(tier);
-
-    // Check if limit reached
-    if (tier.alertsToday >= FREE_TIER.maxAlertsPerDay) {
-        showLimitReached();
-    }
-}
-
-function showLimitReached() {
-    const upgradePrompt = document.getElementById('upgrade-prompt');
-    if (upgradePrompt) {
-        upgradePrompt.innerHTML = `
-            <div class="text-yellow-400 text-xs font-bold mb-1">⚠️ Daily Limit Reached</div>
-            <p class="text-[10px] text-slate-400">You've used all 3 free alerts today. Upgrade to Pro for unlimited access!</p>
-        `;
-        upgradePrompt.classList.remove('hidden');
-    }
-}
-
-function unlockFreeContent() {
-    const locked = document.getElementById('content-locked');
-    const unlocked = document.getElementById('content-unlocked');
-
-    // Keep locked section visible but show unlocked content below
-    unlocked.classList.remove('hidden');
-
-    // Add free tier badge
-    const badge = document.createElement('div');
-    badge.className = 'text-[10px] bg-green-500/20 text-green-500 px-3 py-1 rounded border border-green-500/30 mb-4 inline-block';
-    badge.innerText = 'FREE TIER • 5-MIN DELAY';
-    unlocked.prepend(badge);
-
-    // Start alpha stream with delay
-    setTimeout(() => {
-        if (typeof startAlphaStream === 'function') startAlphaStream();
-    }, 600);
-}
-
-// Check on page load if user already has free tier
-document.addEventListener('DOMContentLoaded', () => {
-    if (isFreeUser()) {
-        const btn = document.getElementById('free-access-btn');
-        if (btn) {
-            btn.innerText = '✓ Free Access Active';
-            btn.disabled = true;
-            btn.classList.remove('bg-green-600', 'hover:bg-green-500');
-            btn.classList.add('bg-slate-700', 'cursor-not-allowed');
-        }
-
-        const upgradePrompt = document.getElementById('upgrade-prompt');
-        if (upgradePrompt) {
-            upgradePrompt.classList.remove('hidden');
-        }
-    }
-});
 
 // ============================================
 // 🔥 EMAIL CAPTURE
@@ -182,18 +123,18 @@ function captureEmail() {
 
     console.log('Email captured:', email);
     console.log('Total emails:', emails.length);
-
-    // In production: send to backend/email service
-    // fetch('https://api.example.com/subscribe', { method: 'POST', body: JSON.stringify({ email }) });
 }
 
+// ============================================
+// 💳 PAYMENT VERIFICATION
+// ============================================
 async function verifyPayment() {
     const userWallet = document.getElementById('user-wallet').value.trim();
     const log = document.getElementById('verification-log');
     const btn = document.getElementById('verify-btn');
-    
+
     if (!userWallet) {
-        log.innerText = "ERROR: ADDRESS_REQUIRED";
+        log.innerText = "ERROR: WALLET_ADDRESS_REQUIRED";
         return;
     }
 
@@ -201,13 +142,18 @@ async function verifyPayment() {
     btn.innerText = "SCANNING_BLOCKCHAIN...";
     log.innerText = "QUERYING_SOLANA_MAINNET...";
 
+    // Minimum 0.05 SOL = 50,000,000 lamports
+    const minLamports = 50000000;
+
     try {
         const connection = new solanaWeb3.Connection(SOLANA_RPC);
         const publicKey = new solanaWeb3.PublicKey(SYSTEM_WALLET);
-        
-        const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 20 });
-        
+
+        const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 50 });
+
         let found = false;
+        let foundAmount = 0;
+
         for (let sigInfo of signatures) {
             const tx = await connection.getParsedTransaction(sigInfo.signature, {
                 maxSupportedTransactionVersion: 0
@@ -218,17 +164,15 @@ async function verifyPayment() {
                 for (let ix of instructions) {
                     if (ix.program === "system" && ix.parsed && ix.parsed.type === "transfer") {
                         const { info } = ix.parsed;
-                        // 0.1 SOL = 100,000,000 lamports
-                        
-// Updated payment verification accepting 0.1, 0.2, or 1.0 SOL
-if (info.source === userWallet && info.destination === "AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM") {
-    const lamports = info.lamports;
-    if (lamports >= 100000000) { // 0.1 SOL minimum
-        found = true;
-        break;
-    }
-}
-
+                        // Minimum 0.05 SOL = 50,000,000 lamports
+                        if (info.source === userWallet && info.destination === SYSTEM_WALLET) {
+                            const lamports = info.lamports;
+                            if (lamports >= minLamports) {
+                                found = true;
+                                foundAmount = lamports;
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -236,46 +180,53 @@ if (info.source === userWallet && info.destination === "AqE264DnKyJci9kV4t3eYhDt
         }
 
         if (found) {
-            log.innerText = "PAYMENT_CONFIRMED. ACCESS_GRANTED.";
-            // Set pro tier
+            const paidSOL = (foundAmount / 1000000000).toFixed(3);
+            log.innerText = `✓ PAYMENT CONFIRMED (${paidSOL} SOL). ACCESS GRANTED.`;
+            log.style.color = '#22c55e';
+
+            // Set pro tier with payment amount
             setTier({
                 type: 'pro',
                 activatedAt: new Date().toISOString(),
-                amount: lamports / 1000000000 // Convert lamports to SOL
+                amount: foundAmount / 1000000000
             });
             unlockContent();
         } else {
-            log.innerText = "NO_MATCHING_TRANSACTION_FOUND_IN_LAST_20_BLOCKS";
+            log.innerText = `NO TRANSACTION ≥ ${MIN_PAYMENT_SOL} SOL FOUND`;
+            log.style.color = '#ef4444';
             btn.disabled = false;
-            btn.innerText = "RETRY_VERIFICATION";
+            btn.innerText = "RETRY VERIFICATION";
         }
     } catch (err) {
         console.error(err);
         log.innerText = "RPC_ERROR: TIMEOUT_OR_LIMIT_EXCEEDED";
+        log.style.color = '#ef4444';
         btn.disabled = false;
-        btn.innerText = "RETRY_VERIFICATION";
+        btn.innerText = "RETRY VERIFICATION";
     }
 }
 
-
+// ============================================
+// 🔓 CONTENT UNLOCK
+// ============================================
 function unlockContent() {
     const locked = document.getElementById('content-locked');
     const unlocked = document.getElementById('content-unlocked');
-    
+
     locked.style.transition = 'opacity 0.5s ease';
     locked.style.opacity = '0';
-    
+
     setTimeout(() => {
         locked.classList.add('hidden');
         unlocked.classList.remove('hidden');
         unlocked.style.opacity = '0';
-        
+
         // Premium unlock effect
         const app = document.getElementById('app');
         app.style.transition = 'box-shadow 1s ease, border-color 1s ease';
         app.style.boxShadow = '0 0 50px rgba(34, 197, 94, 0.2), inset 0 0 50px rgba(34, 197, 94, 0.1)';
         app.style.borderColor = 'rgba(34, 197, 94, 0.5)';
-        
+
         setTimeout(() => {
             unlocked.style.transition = 'opacity 0.8s ease';
             unlocked.style.opacity = '1';
@@ -284,11 +235,13 @@ function unlockContent() {
     }, 500);
 }
 
-
+// ============================================
+// 📊 ALPHA STREAM
+// ============================================
 async function startAlphaStream() {
     updatePrices();
     setInterval(updatePrices, 10000);
-    
+
     const logs = document.getElementById('live-logs');
     setInterval(() => {
         const time = new Date().toLocaleTimeString();
@@ -321,3 +274,17 @@ async function updatePrices() {
         }
     }
 }
+
+// ============================================
+// 🚀 INIT
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if already pro user
+    if (isProUser()) {
+        const tier = getTier();
+        console.log(`Pro user detected. Paid: ${tier.amount} SOL on ${tier.activatedAt}`);
+    }
+
+    // Initialize payment display
+    updatePaymentDisplay();
+});
