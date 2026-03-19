@@ -42,6 +42,11 @@
         /* Testimonial Cards */
         .testimonial-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .testimonial-card:hover { transform: translateY(-5px); box-shadow: 0 10px 40px rgba(56, 189, 248, 0.15); }
+        
+        /* Pricing Button Styles */
+        .price-btn { transition: all 0.2s ease; }
+        .price-btn:hover { transform: translateY(-2px); }
+        .price-btn.selected { ring: 2px; ring-color: #38bdf8; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-2 sm:p-4 relative">
@@ -93,15 +98,6 @@
                     <h2 class="text-2xl md:text-3xl font-bold text-white mb-3 neon-text tracking-tighter uppercase italic">Alpha Terminal</h2>
                     <p class="text-xs md:text-sm text-slate-400 mb-6 leading-relaxed">Real-time spread intelligence for Moltbook ecosystem tokens.</p>
 
-                    <!-- 🔥 FREE ACCESS CTA -->
-                    <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
-                        <div class="text-green-400 text-sm font-bold mb-2 uppercase">🎁 Try FREE - No Payment Required</div>
-                        <p class="text-[10px] text-slate-400 mb-3">Get 3 alerts/day with 5-min delay. See real alpha, zero risk.</p>
-                        <button onclick="activateFreeTier()" id="free-access-btn" class="bg-green-600 hover:bg-green-500 text-white py-3 px-6 rounded font-bold text-xs tracking-widest uppercase transition-all">
-                            Get Free Access
-                        </button>
-                    </div>
-
                     <!-- 🔥 LIVE ALERTS PREVIEW (Always visible) -->
                     <div class="mb-4">
                         <div class="text-[10px] text-slate-500 uppercase tracking-widest mb-2">Live Feed Preview</div>
@@ -125,7 +121,7 @@
                                 </div>
                             </div>
                         </div>
-                        <p class="text-[9px] text-slate-600 mt-2">Updates every 30s • Unlock with payment</p>
+                        <p class="text-[9px] text-slate-600 mt-2">Updates every 30s • Unlock for real-time access</p>
                     </div>
 
                     <!-- 🔥 EMAIL CAPTURE -->
@@ -137,25 +133,70 @@
                         </div>
                         <p class="text-[9px] text-slate-600 mt-2">Get notified of high-spread opportunities. No spam.</p>
                     </div>
-
-                    <!-- Pricing Table -->
-                    <div class="mb-6">
-                        <div class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 p-5 rounded-lg border border-blue-500/30 text-center">
-                            <div class="text-[10px] text-blue-400 uppercase mb-1 tracking-widest">Lifetime Access</div>
-                            <div class="text-2xl text-white font-bold mb-2">Pay What You Want</div>
-                            <div class="text-xs text-slate-400 mb-3">
-                                <span class="text-green-400 font-bold">Minimum:</span> 0.05 SOL &nbsp;|&nbsp;
-                                <span class="text-blue-400 font-bold">Suggested:</span> 0.1 SOL &nbsp;|&nbsp;
-                                <span class="text-purple-400 font-bold">Supporter:</span> 0.2+ SOL
-                            </div>
-                            <div class="text-[9px] text-slate-500 mt-2">
-                                ✅ Unlimited real-time alerts &nbsp;✅ Historical charts &nbsp;✅ Share functionality &nbsp;✅ Lifetime access
-                            </div>
+                    
+                    <!-- 🔥 PAY WHAT YOU WANT SECTION -->
+                    <div id="pwyw-section" class="bg-gradient-to-b from-blue-900/20 to-slate-900/50 p-4 md:p-6 rounded-lg border border-blue-500/30 text-left w-full shadow-lg mb-4">
+                        <div class="text-center mb-4">
+                            <div class="text-lg text-white font-bold mb-1">Pay What You Want</div>
+                            <div class="text-[10px] text-blue-400 uppercase tracking-widest">Minimum 0.1 SOL • Lifetime Access</div>
+                        </div>
+                        
+                        <!-- Preset Amount Buttons -->
+                        <div class="grid grid-cols-4 gap-2 mb-4">
+                            <button onclick="selectAmount(0.1)" class="price-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded text-center" data-amount="0.1">
+                                <div class="text-[9px] text-slate-400 uppercase">Min</div>
+                                <div class="text-sm text-white font-bold">0.1 SOL</div>
+                            </button>
+                            <button onclick="selectAmount(0.15)" class="price-btn bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 p-3 rounded text-center" data-amount="0.15">
+                                <div class="text-[9px] text-blue-400 uppercase">Suggested</div>
+                                <div class="text-sm text-white font-bold">0.15 SOL</div>
+                            </button>
+                            <button onclick="selectAmount(0.3)" class="price-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded text-center" data-amount="0.3">
+                                <div class="text-[9px] text-slate-400 uppercase">Premium</div>
+                                <div class="text-sm text-white font-bold">0.3 SOL</div>
+                            </button>
+                            <button onclick="showCustomInput()" class="price-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded text-center" id="custom-btn">
+                                <div class="text-[9px] text-slate-400 uppercase">Custom</div>
+                                <div class="text-sm text-white font-bold">💎</div>
+                            </button>
+                        </div>
+                        
+                        <!-- Custom Amount Input (hidden by default) -->
+                        <div id="custom-input-container" class="hidden mb-4">
+                            <input type="number" id="custom-amount" min="0.1" step="0.01" placeholder="Enter amount (min 0.1 SOL)" 
+                                   class="w-full bg-slate-950 border border-blue-500/50 p-3 rounded text-sm text-white text-center focus:outline-none"
+                                   oninput="updateCustomAmount()">
+                            <div class="text-[9px] text-slate-500 mt-1 text-center">Minimum 0.1 SOL required</div>
+                        </div>
+                        
+                        <!-- Selected Amount Display -->
+                        <div class="bg-slate-950 p-3 rounded border border-slate-700 mb-3 text-center">
+                            <div class="text-[9px] text-slate-500 uppercase mb-1">Selected Amount</div>
+                            <div id="selected-amount" class="text-2xl text-blue-400 font-bold">0.15 SOL</div>
+                            <div id="usd-equivalent" class="text-[10px] text-slate-500">≈ $-- USD</div>
+                        </div>
+                        
+                        <!-- Wallet Address -->
+                        <div class="text-[9px] text-zinc-500 mb-1 uppercase font-bold">Send SOL to:</div>
+                        <div class="bg-slate-950 p-2 rounded font-mono text-[9px] break-all text-blue-300 border border-blue-500/20 select-all mb-3">
+                            AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM
+                        </div>
+                        
+                        <!-- User Wallet Input -->
+                        <input id="user-wallet" type="text" placeholder="YOUR WALLET ADDRESS" class="w-full bg-slate-950 border border-slate-700 p-2 rounded text-xs focus:outline-none focus:border-blue-500 transition-colors text-white uppercase tracking-widest mb-2">
+                        
+                        <!-- Verify Button -->
+                        <button onclick="verifyPayment()" id="verify-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold text-xs tracking-widest transition-all uppercase">
+                            Verify Payment
+                        </button>
+                        <div id="verification-log" class="text-[10px] text-slate-500 animate-pulse h-4 uppercase mt-2"></div>
+                        
+                        <!-- Support Note -->
+                        <div class="text-[9px] text-slate-600 mt-3 text-center italic">
+                            💡 Want to support more? Pay any amount above the minimum.
                         </div>
                     </div>
 
-
-                    
                     <!-- 🔥 TESTIMONIALS -->
                     <div class="mb-6">
                         <h3 class="text-xs text-slate-500 uppercase tracking-widest mb-3">What Traders Say</h3>
@@ -176,53 +217,6 @@
                                 <p class="text-[9px] text-blue-400 mt-2">— @alpha_hunter</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- 💰 PAYMENT SECTION -->
-                    <div id="pro-section" class="bg-black/50 p-4 md:p-6 rounded-lg border border-yellow-500/20 text-left w-full shadow-lg mb-4">
-                        <div class="text-[9px] text-zinc-500 mb-2 uppercase font-bold tracking-widest">Choose Your Amount</div>
-
-                        <!-- Preset Amount Buttons -->
-                        <div class="grid grid-cols-3 gap-2 mb-3">
-                            <button onclick="selectAmount(0.05)" class="amount-btn bg-slate-800 border border-slate-700 hover:border-blue-500 text-white py-3 rounded font-bold text-sm transition-all">
-                                0.05 SOL
-                                <div class="text-[8px] text-slate-500 font-normal">Min</div>
-                            </button>
-                            <button onclick="selectAmount(0.1)" class="amount-btn bg-blue-600 border border-blue-500 text-white py-3 rounded font-bold text-sm transition-all">
-                                0.1 SOL
-                                <div class="text-[8px] text-blue-300 font-normal">Suggested</div>
-                            </button>
-                            <button onclick="selectAmount(0.2)" class="amount-btn bg-slate-800 border border-slate-700 hover:border-blue-500 text-white py-3 rounded font-bold text-sm transition-all">
-                                0.2 SOL
-                                <div class="text-[8px] text-slate-500 font-normal">Supporter</div>
-                            </button>
-                        </div>
-
-                        <!-- Custom Amount Input -->
-                        <div class="mb-3">
-                            <label class="text-[9px] text-slate-500 mb-1 block">Or enter custom amount (min 0.05 SOL)</label>
-                            <div class="flex gap-2">
-                                <input id="custom-amount" type="number" step="0.01" min="0.05" placeholder="0.05" oninput="validateCustomAmount()"
-                                    class="flex-1 bg-slate-950 border border-slate-700 p-2 rounded text-xs focus:outline-none focus:border-blue-500 transition-colors text-white">
-                                <span class="bg-slate-800 px-3 py-2 rounded text-xs text-slate-400 border border-slate-700">SOL</span>
-                            </div>
-                        </div>
-
-                        <!-- Selected Amount Display -->
-                        <div id="selected-amount-display" class="text-center text-sm text-blue-400 font-bold mb-3">
-                            Selected: 0.10 SOL
-                        </div>
-
-                        <!-- Payment Instructions -->
-                        <div class="text-[8px] text-slate-600 mb-2">Send your selected amount to unlock real-time alerts & unlimited access</div>
-                        <div class="bg-slate-950 p-2 rounded font-mono text-[9px] break-all text-blue-300 border border-blue-500/20 select-all mb-3">
-                            AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM
-                        </div>
-                        <input id="user-wallet" type="text" placeholder="YOUR WALLET ADDRESS" class="w-full bg-slate-950 border border-slate-700 p-2 rounded text-xs focus:outline-none focus:border-blue-500 transition-colors text-white uppercase tracking-widest mb-2">
-                        <button onclick="verifyPayment()" id="verify-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold text-xs tracking-widest transition-all uppercase">
-                            Verify 0.10 SOL Payment
-                        </button>
-                        <div id="verification-log" class="text-[10px] text-slate-500 h-4 uppercase mt-2"></div>
                     </div>
                 </div>
 
@@ -294,6 +288,146 @@
     <script src="app.js"></script>
     <script>
         // ============================================
+        // 🔥 PAY WHAT YOU WANT LOGIC
+        // ============================================
+        const MINIMUM_SOL = 0.1;
+        let selectedAmount = 0.15;
+        let solPrice = 0;
+        
+        async function fetchSolPrice() {
+            try {
+                const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/So11111111111111111111111111111111111111112');
+                const data = await res.json();
+                if (data.pairs && data.pairs[0]) {
+                    solPrice = parseFloat(data.pairs[0].priceUsd);
+                    document.getElementById('sol-price').innerText = `SOL: $${solPrice.toFixed(2)}`;
+                    updateUsdEquivalent();
+                }
+            } catch (e) {}
+        }
+        
+        function selectAmount(amount) {
+            selectedAmount = amount;
+            document.getElementById('selected-amount').innerText = `${amount} SOL`;
+            document.getElementById('custom-input-container').classList.add('hidden');
+            updateUsdEquivalent();
+            
+            // Update button styles
+            document.querySelectorAll('.price-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-blue-500');
+                if (parseFloat(btn.dataset.amount) === amount) {
+                    btn.classList.add('ring-2', 'ring-blue-500');
+                }
+            });
+        }
+        
+        function showCustomInput() {
+            document.getElementById('custom-input-container').classList.remove('hidden');
+            document.getElementById('custom-amount').focus();
+            document.querySelectorAll('.price-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-blue-500');
+            });
+            document.getElementById('custom-btn').classList.add('ring-2', 'ring-blue-500');
+        }
+        
+        function updateCustomAmount() {
+            const input = document.getElementById('custom-amount');
+            let value = parseFloat(input.value);
+            
+            if (isNaN(value) || value < MINIMUM_SOL) {
+                value = MINIMUM_SOL;
+            }
+            
+            selectedAmount = value;
+            document.getElementById('selected-amount').innerText = `${value.toFixed(2)} SOL`;
+            updateUsdEquivalent();
+        }
+        
+        function updateUsdEquivalent() {
+            if (solPrice > 0) {
+                const usd = (selectedAmount * solPrice).toFixed(2);
+                document.getElementById('usd-equivalent').innerText = `≈ $${usd} USD`;
+            }
+        }
+        
+        // Initialize
+        fetchSolPrice();
+        setInterval(fetchSolPrice, 30000);
+        selectAmount(0.15); // Default to suggested
+        
+        // ============================================
+        // 🔥 PAYMENT VERIFICATION (Updated for PWYW)
+        // ============================================
+        async function verifyPayment() {
+            const userWallet = document.getElementById('user-wallet').value.trim();
+            const log = document.getElementById('verification-log');
+            const btn = document.getElementById('verify-btn');
+            
+            if (!userWallet) {
+                log.innerText = "Please enter your wallet address";
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerText = "VERIFYING...";
+            log.innerText = "Checking blockchain...";
+            
+            try {
+                const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+                const publicKey = new solanaWeb3.PublicKey("AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM");
+                const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 20 });
+                
+                // Convert selected SOL amount to lamports
+                const minLamports = Math.floor(MINIMUM_SOL * 1000000000); // 0.1 SOL minimum
+                
+                let found = false;
+                let foundAmount = 0;
+                
+                for (let sigInfo of signatures) {
+                    const tx = await connection.getParsedTransaction(sigInfo.signature, { maxSupportedTransactionVersion: 0 });
+                    if (tx && tx.meta && !tx.meta.err) {
+                        for (let ix of tx.transaction.message.instructions) {
+                            if (ix.program === "system" && ix.parsed?.type === "transfer") {
+                                const { info } = ix.parsed;
+                                if (info.source === userWallet && 
+                                    info.destination === "AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM" && 
+                                    info.lamports >= minLamports) {
+                                    found = true;
+                                    foundAmount = info.lamports / 1000000000;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+
+                if (found) {
+                    log.innerText = `✓ Payment confirmed: ${foundAmount} SOL`;
+                    log.classList.add('text-green-400');
+                    setTimeout(() => {
+                        if (typeof unlockContent === 'function') {
+                            unlockContent();
+                        } else {
+                            document.getElementById('content-locked').classList.add('hidden');
+                            document.getElementById('content-unlocked').classList.remove('hidden');
+                        }
+                    }, 500);
+                } else {
+                    log.innerText = `No payment found (min ${MINIMUM_SOL} SOL)`;
+                    log.classList.add('text-red-400');
+                    btn.disabled = false;
+                    btn.innerText = "RETRY";
+                }
+            } catch (err) {
+                log.innerText = "Connection error. Please try again.";
+                log.classList.add('text-yellow-400');
+                btn.disabled = false;
+                btn.innerText = "RETRY";
+            }
+        }
+        
+        // ============================================
         // 🔥 TOP 10 COINS PRICE TICKER
         // ============================================
         const TOP_COINS = [
@@ -321,7 +455,6 @@
                 updateTicker();
             } catch (e) {
                 console.error('Ticker fetch error:', e);
-                // Fallback to static ticker
                 updateTickerFallback();
             }
         }
@@ -344,7 +477,6 @@
                 </span>`;
             });
             
-            // Duplicate for seamless loop
             ticker.innerHTML = html + html;
         }
         
@@ -353,7 +485,6 @@
             ticker.innerHTML = '<span class="px-4">Connecting to market feed...</span>'.repeat(10);
         }
         
-        // Initialize ticker
         fetchTopCoinPrices();
         setInterval(fetchTopCoinPrices, 30000);
         
@@ -364,12 +495,6 @@
             const container = document.getElementById('alert-container');
             if (!container) return;
 
-            // Check if user is pro
-            if (typeof isProUser === 'function' && !isProUser()) {
-                return; // No access yet
-            }
-
-            // Simulate spread data (in production, this would be real API data)
             const alerts = [
                 { token: 'SHELLRAISER', spread: (Math.random() * 2 + 0.5).toFixed(2), dex: 'Jupiter', direction: 'up' },
                 { token: 'SHIPYARD', spread: (Math.random() * 1.5).toFixed(2), dex: 'Raydium', direction: Math.random() > 0.5 ? 'up' : 'down' }
@@ -408,7 +533,6 @@
             const ctx = document.getElementById('spreadChart');
             if (!ctx) return;
             
-            // Generate mock historical data
             const labels = [];
             const shellData = [];
             const shipData = [];
@@ -471,7 +595,6 @@
         }
         
         function setChartPeriod(period) {
-            // Update chart data based on period (mock implementation)
             console.log('Setting chart period:', period);
         }
         
@@ -491,7 +614,6 @@
                     url: 'https://ryan-the-zilla.github.io/ryanx-alpha-terminal/'
                 });
             } else {
-                // Fallback: copy to clipboard
                 navigator.clipboard.writeText(text).then(() => {
                     alert('Spread info copied to clipboard! Share it on Twitter/Telegram.');
                 });
@@ -499,30 +621,27 @@
         }
         
         // ============================================
-        // SOL Price Ticker (existing)
+        // 🔥 EMAIL CAPTURE
         // ============================================
-        async function updateSolPrice() {
-            try {
-                const res = await fetch('https://api.dexscreener.com/latest/dex/tokens/So11111111111111111111111111111111111111112');
-                const data = await res.json();
-                if (data.pairs && data.pairs[0]) {
-                    document.getElementById('sol-price').innerText = `SOL: $${parseFloat(data.pairs[0].priceUsd).toFixed(2)}`;
-                }
-            } catch (e) {}
+        function captureEmail() {
+            const email = document.getElementById('email-capture').value;
+            if (email && email.includes('@')) {
+                console.log('Email captured:', email);
+                document.getElementById('email-capture').value = '';
+                alert('Thanks! You\'ll receive alpha updates.');
+            }
         }
-        updateSolPrice();
-        setInterval(updateSolPrice, 30000);
         
-        // ============================================
         // Initialize on unlock
-        // ============================================
+        const originalUnlockContent = typeof unlockContent !== 'undefined' ? unlockContent : null;
+        
         function enhancedUnlock() {
+            if (originalUnlockContent) originalUnlockContent();
+            
             setTimeout(() => {
-                if (typeof initSpreadChart === 'function') initSpreadChart();
-                if (typeof updateSpreadAlerts === 'function') updateSpreadAlerts();
-                setInterval(() => {
-                    if (typeof updateSpreadAlerts === 'function') updateSpreadAlerts();
-                }, 10000);
+                initSpreadChart();
+                updateSpreadAlerts();
+                setInterval(updateSpreadAlerts, 10000);
             }, 600);
         }
     </script>
