@@ -501,13 +501,13 @@
             const priceEl = document.getElementById(token === 'SHELLRAISER' ? 'price-shell' : 'price-ship');
             const price = priceEl ? priceEl.innerText : '$0.00';
             
-            const text = `🔥 ${token} Alpha Alert!\n\n💰 Price: ${price}\n📊 Check the spread on RyanX Alpha Terminal\n\n🔗 https://qyrn555vxryan.github.io/ryanx-alpha-terminal/\n\n#Solana #DeFi #Arbitrage`;
+            const text = `🔥 ${token} Alpha Alert!\n\n💰 Price: ${price}\n📊 Check the spread on RyanX Alpha Terminal\n\n🔗 https://ryan-the-zilla.github.io/ryanx-alpha-terminal/\n\n#Solana #DeFi #Arbitrage`;
             
             if (navigator.share) {
                 navigator.share({
                     title: `${token} Spread Alert`,
                     text: text,
-                    url: 'https://qyrn555vxryan.github.io/ryanx-alpha-terminal/'
+                    url: 'https://ryan-the-zilla.github.io/ryanx-alpha-terminal/'
                 });
             } else {
                 // Fallback: copy to clipboard
