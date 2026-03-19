@@ -42,11 +42,6 @@
         /* Testimonial Cards */
         .testimonial-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .testimonial-card:hover { transform: translateY(-5px); box-shadow: 0 10px 40px rgba(56, 189, 248, 0.15); }
-        
-        /* Pricing Button Styles */
-        .price-btn { transition: all 0.2s ease; }
-        .price-btn:hover { transform: translateY(-2px); }
-        .price-btn.selected { ring: 2px; ring-color: #38bdf8; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col p-2 sm:p-4 relative">
@@ -134,67 +129,47 @@
                         <p class="text-[9px] text-slate-600 mt-2">Get notified of high-spread opportunities. No spam.</p>
                     </div>
                     
-                    <!-- 🔥 PAY WHAT YOU WANT SECTION -->
+                    <!-- 🔥 SIMPLIFIED PAYMENT SECTION -->
                     <div id="pwyw-section" class="bg-gradient-to-b from-blue-900/20 to-slate-900/50 p-4 md:p-6 rounded-lg border border-blue-500/30 text-left w-full shadow-lg mb-4">
-                        <div class="text-center mb-4">
+                        <div class="text-center mb-6">
                             <div class="text-lg text-white font-bold mb-1">Pay What You Want</div>
-                            <div class="text-[10px] text-blue-400 uppercase tracking-widest">Minimum 0.1 SOL • Lifetime Access</div>
+                            <div class="text-[10px] text-blue-400 uppercase tracking-widest">Lifetime Access</div>
                         </div>
                         
-                        <!-- Preset Amount Buttons -->
-                        <div class="grid grid-cols-4 gap-2 mb-4">
-                            <button onclick="selectAmount(0.1)" class="price-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded text-center" data-amount="0.1">
-                                <div class="text-[9px] text-slate-400 uppercase">Min</div>
-                                <div class="text-sm text-white font-bold">0.1 SOL</div>
-                            </button>
-                            <button onclick="selectAmount(0.15)" class="price-btn bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 p-3 rounded text-center" data-amount="0.15">
-                                <div class="text-[9px] text-blue-400 uppercase">Suggested</div>
-                                <div class="text-sm text-white font-bold">0.15 SOL</div>
-                            </button>
-                            <button onclick="selectAmount(0.3)" class="price-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded text-center" data-amount="0.3">
-                                <div class="text-[9px] text-slate-400 uppercase">Premium</div>
-                                <div class="text-sm text-white font-bold">0.3 SOL</div>
-                            </button>
-                            <button onclick="showCustomInput()" class="price-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 p-3 rounded text-center" id="custom-btn">
-                                <div class="text-[9px] text-slate-400 uppercase">Custom</div>
-                                <div class="text-sm text-white font-bold">💎</div>
-                            </button>
+                        <!-- Minimum Amount -->
+                        <div class="bg-slate-950 p-4 rounded-lg border border-blue-500/30 mb-4 text-center">
+                            <div class="text-[10px] text-slate-500 uppercase mb-2">Minimum</div>
+                            <div class="text-3xl text-blue-400 font-bold">0.1 SOL</div>
+                            <div id="usd-equivalent" class="text-[10px] text-slate-500 mt-1">≈ $-- USD</div>
                         </div>
                         
-                        <!-- Custom Amount Input (hidden by default) -->
-                        <div id="custom-input-container" class="hidden mb-4">
-                            <input type="number" id="custom-amount" min="0.1" step="0.01" placeholder="Enter amount (min 0.1 SOL)" 
-                                   class="w-full bg-slate-950 border border-blue-500/50 p-3 rounded text-sm text-white text-center focus:outline-none"
-                                   oninput="updateCustomAmount()">
-                            <div class="text-[9px] text-slate-500 mt-1 text-center">Minimum 0.1 SOL required</div>
+                        <!-- Custom Amount Input -->
+                        <div class="mb-4">
+                            <label class="text-[10px] text-slate-400 uppercase mb-2 block">Enter amount (0.1 SOL or more)</label>
+                            <input type="number" id="custom-amount" min="0.1" step="0.01" value="0.1" placeholder="0.1" 
+                                   class="w-full bg-slate-950 border border-blue-500/50 p-4 rounded text-lg text-white text-center focus:outline-none focus:border-blue-400 font-bold"
+                                   oninput="updateAmount()">
                         </div>
                         
-                        <!-- Selected Amount Display -->
-                        <div class="bg-slate-950 p-3 rounded border border-slate-700 mb-3 text-center">
-                            <div class="text-[9px] text-slate-500 uppercase mb-1">Selected Amount</div>
-                            <div id="selected-amount" class="text-2xl text-blue-400 font-bold">0.15 SOL</div>
-                            <div id="usd-equivalent" class="text-[10px] text-slate-500">≈ $-- USD</div>
+                        <!-- Pay Button -->
+                        <div class="text-center mb-4">
+                            <div id="pay-message" class="text-sm text-blue-300 font-bold mb-2">Pay 0.1 SOL or more</div>
                         </div>
                         
                         <!-- Wallet Address -->
                         <div class="text-[9px] text-zinc-500 mb-1 uppercase font-bold">Send SOL to:</div>
-                        <div class="bg-slate-950 p-2 rounded font-mono text-[9px] break-all text-blue-300 border border-blue-500/20 select-all mb-3">
+                        <div class="bg-slate-950 p-3 rounded font-mono text-[9px] break-all text-blue-300 border border-blue-500/20 select-all mb-4">
                             AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM
                         </div>
                         
                         <!-- User Wallet Input -->
-                        <input id="user-wallet" type="text" placeholder="YOUR WALLET ADDRESS" class="w-full bg-slate-950 border border-slate-700 p-2 rounded text-xs focus:outline-none focus:border-blue-500 transition-colors text-white uppercase tracking-widest mb-2">
+                        <input id="user-wallet" type="text" placeholder="YOUR WALLET ADDRESS" class="w-full bg-slate-950 border border-slate-700 p-3 rounded text-xs focus:outline-none focus:border-blue-500 transition-colors text-white uppercase tracking-widest mb-3">
                         
                         <!-- Verify Button -->
                         <button onclick="verifyPayment()" id="verify-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold text-xs tracking-widest transition-all uppercase">
                             Verify Payment
                         </button>
                         <div id="verification-log" class="text-[10px] text-slate-500 animate-pulse h-4 uppercase mt-2"></div>
-                        
-                        <!-- Support Note -->
-                        <div class="text-[9px] text-slate-600 mt-3 text-center italic">
-                            💡 Want to support more? Pay any amount above the minimum.
-                        </div>
                     </div>
 
                     <!-- 🔥 TESTIMONIALS -->
@@ -288,10 +263,10 @@
     <script src="app.js"></script>
     <script>
         // ============================================
-        // 🔥 PAY WHAT YOU WANT LOGIC
+        // 🔥 SIMPLIFIED PAYMENT LOGIC
         // ============================================
         const MINIMUM_SOL = 0.1;
-        let selectedAmount = 0.15;
+        let selectedAmount = 0.1;
         let solPrice = 0;
         
         async function fetchSolPrice() {
@@ -306,31 +281,7 @@
             } catch (e) {}
         }
         
-        function selectAmount(amount) {
-            selectedAmount = amount;
-            document.getElementById('selected-amount').innerText = `${amount} SOL`;
-            document.getElementById('custom-input-container').classList.add('hidden');
-            updateUsdEquivalent();
-            
-            // Update button styles
-            document.querySelectorAll('.price-btn').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-blue-500');
-                if (parseFloat(btn.dataset.amount) === amount) {
-                    btn.classList.add('ring-2', 'ring-blue-500');
-                }
-            });
-        }
-        
-        function showCustomInput() {
-            document.getElementById('custom-input-container').classList.remove('hidden');
-            document.getElementById('custom-amount').focus();
-            document.querySelectorAll('.price-btn').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-blue-500');
-            });
-            document.getElementById('custom-btn').classList.add('ring-2', 'ring-blue-500');
-        }
-        
-        function updateCustomAmount() {
+        function updateAmount() {
             const input = document.getElementById('custom-amount');
             let value = parseFloat(input.value);
             
@@ -339,7 +290,7 @@
             }
             
             selectedAmount = value;
-            document.getElementById('selected-amount').innerText = `${value.toFixed(2)} SOL`;
+            document.getElementById('pay-message').innerText = `Pay ${value.toFixed(2)} SOL or more`;
             updateUsdEquivalent();
         }
         
@@ -353,10 +304,9 @@
         // Initialize
         fetchSolPrice();
         setInterval(fetchSolPrice, 30000);
-        selectAmount(0.15); // Default to suggested
         
         // ============================================
-        // 🔥 PAYMENT VERIFICATION (Updated for PWYW)
+        // 🔥 PAYMENT VERIFICATION
         // ============================================
         async function verifyPayment() {
             const userWallet = document.getElementById('user-wallet').value.trim();
@@ -377,8 +327,7 @@
                 const publicKey = new solanaWeb3.PublicKey("AqE264DnKyJci9kV4t3eYhDtFB3H88HQusWtH5odSqHM");
                 const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 20 });
                 
-                // Convert selected SOL amount to lamports
-                const minLamports = Math.floor(MINIMUM_SOL * 1000000000); // 0.1 SOL minimum
+                const minLamports = Math.floor(MINIMUM_SOL * 1000000000);
                 
                 let found = false;
                 let foundAmount = 0;
